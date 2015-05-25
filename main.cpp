@@ -108,8 +108,9 @@ FIBITMAP* makeTexture(int* bytes, int byteslen, int width, int height)
 	return img;
 }
 
-FIBITMAP* PieceImage(FIBITMAP* curImg, list<piece> pieces, Vec2 maxul, Vec2 maxbr, uint32_t width, uint32_t height)
+FIBITMAP* PieceImage(FIBITMAP* curImg, list<piece> pieces, Vec2 maxul, Vec2 maxbr)
 {
+	uint32_t width, height;
 	Vec2 OutputSize;
 	Vec2 CenterPos;
 	OutputSize.x = -maxul.x + maxbr.x;
@@ -118,6 +119,9 @@ FIBITMAP* PieceImage(FIBITMAP* curImg, list<piece> pieces, Vec2 maxul, Vec2 maxb
 	CenterPos.y = maxul.y;
 	OutputSize.x = uint32_t(OutputSize.x);
 	OutputSize.y = uint32_t(OutputSize.y);
+	
+	width = FreeImage_GetWidth(curImg);
+	height = FreeImage_GetHeight(curImg);
 
 	FIBITMAP* result = FreeImage_Allocate(OutputSize.x, OutputSize.y, 32);
 
@@ -275,7 +279,7 @@ void splitImages(const char* cFilename)
 		FIBITMAP* img = makeTexture(buf, decompSz, tHeaders[iCurFile].imageW, tHeaders[iCurFile].imageH);
 		
 		//Spin through pieces and create the final image
-		FIBITMAP* pieced = PieceImage(img, pieces[iCurFile], maxul, maxbr, tHeaders[iCurFile].imageW, tHeaders[iCurFile].imageH);
+		FIBITMAP* pieced = PieceImage(img, pieces[iCurFile], maxul, maxbr);
 		
 		//Save image
 		ostringstream oss;
