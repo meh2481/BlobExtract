@@ -218,8 +218,14 @@ void splitImages(const char* cFilename)
 	for(int i = 0; i < fileSize; i++)
 		compressed[i] = vData[i];
 	
+	//Read headers in first pass
+	vector<list<piece> > pieces;
+	vector<texHeader> tHeaders;
+	Vec2 maxul;
+	Vec2 maxbr;
+	maxul.x = maxul.y = maxbr.x = maxbr.y = 0;
 	for(int iCurFile = 0; iCurFile < ANBh.numImages; iCurFile++)
-	{	
+	{
 		//Read in our next texture header
 		texHeader th;
 		memcpy(&th, &(vData.data()[sizeof(anbHeader)+sizeof(texHeader)*iCurFile]), sizeof(texHeader));
@@ -232,10 +238,7 @@ void splitImages(const char* cFilename)
 		th.numPieces = byteSwap16(th.numPieces);
 	
 		//Read in list of image pieces
-		Vec2 maxul;
-		Vec2 maxbr;
-		maxul.x = maxul.y = maxbr.x = maxbr.y = 0;
-		list<piece> pieces;
+		list<piece> pieces2;
 		for(uint32_t j = 0; j < th.numPieces; j++)
 		{
 			piece p;
@@ -255,18 +258,24 @@ void splitImages(const char* cFilename)
 				
 			//cout << "Piece: " << p.topLeft.x << ", " << p.topLeft.y << ", " << p.topLeftUV.x  << ", " << p.topLeftUV.y << ", " << p.bottomRight.x << ", " << p.bottomRight.y << ", " << p.bottomRightUV.x << ", " << p.bottomRightUV.y << endl;
 			
-			pieces.push_back(p);
+			pieces2.push_back(p);
 		}
-		
+		pieces.push_back(pieces2);
+		tHeaders.push_back(th);
+	}
+	
+	//Decompress second pass
+	for(int iCurFile = 0; iCurFile < ANBh.numImages; iCurFile++)
+	{		
 		//Decompress LZX data
 		int decompSz;
-		int* buf = lzx_decompress(&(compressed[th.imageOffset]), &decompSz);
+		int* buf = lzx_decompress(&(compressed[tHeaders[iCurFile].imageOffset]), &decompSz);
 		
 		//Do pixel calculations to make a usable image from this
-		FIBITMAP* img = makeTexture(buf, decompSz, th.imageW, th.imageH);
+		FIBITMAP* img = makeTexture(buf, decompSz, tHeaders[iCurFile].imageW, tHeaders[iCurFile].imageH);
 		
 		//Spin through pieces and create the final image
-		FIBITMAP* pieced = PieceImage(img, pieces, maxul, maxbr, th.imageW, th.imageH);
+		FIBITMAP* pieced = PieceImage(img, pieces[iCurFile], maxul, maxbr, tHeaders[iCurFile].imageW, tHeaders[iCurFile].imageH);
 		
 		//Save image
 		ostringstream oss;
