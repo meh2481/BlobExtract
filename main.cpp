@@ -172,13 +172,13 @@ FIBITMAP* PieceImage(FIBITMAP* curImg, list<piece> pieces, Vec2 maxul, Vec2 maxb
 	return result;
 }
 
-void splitImages(const char* cFilename)
+void splitImages(string sFilename)
 {
 	vector<uint8_t> vData;
-	FILE* fh = fopen(cFilename, "rb");
+	FILE* fh = fopen(sFilename.c_str(), "rb");
 	if(fh == NULL)
 	{
-		cerr << "Unable to open input file " << cFilename << endl;
+		cerr << "Unable to open input file " << sFilename << endl;
 		return;
 	}
 	fseek(fh, 0, SEEK_END);
@@ -187,10 +187,10 @@ void splitImages(const char* cFilename)
 	vData.reserve(fileSize);
 	size_t amt = fread(vData.data(), fileSize, 1, fh);
 	fclose(fh);
-	cout << "Splitting images from file " << cFilename << endl;
+	cout << "Splitting images from file " << sFilename << endl;
 	
 	//Figure out what we'll be naming the images
-	string sName = cFilename;
+	string sName = sFilename;
 	//First off, strip off filename extension
 	size_t namepos = sName.find(".anb");
 	if(namepos != string::npos)
@@ -268,9 +268,9 @@ void splitImages(const char* cFilename)
 		tHeaders.push_back(th);
 	}
 	
-	//Decompress second pass
+	//Decompress second pass (Two passes so that maxul/br will take into account ALL images, and center our results accordingly)
 	for(int iCurFile = 0; iCurFile < ANBh.numImages; iCurFile++)
-	{		
+	{
 		//Decompress LZX data
 		int decompSz;
 		int* buf = lzx_decompress(&(compressed[tHeaders[iCurFile].imageOffset]), &decompSz);
@@ -308,7 +308,7 @@ int main(int argc, char** argv)
 	
 	//Decompress ANB files
 	for(list<string>::iterator i = sFilenames.begin(); i != sFilenames.end(); i++)
-		splitImages((*i).c_str());
+		splitImages((*i));
 	FreeImage_DeInitialise();
 	return 0;
 }
